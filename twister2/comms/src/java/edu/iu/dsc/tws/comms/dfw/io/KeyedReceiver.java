@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -48,13 +49,6 @@ public abstract class KeyedReceiver implements MessageReceiver {
   protected int keyLimit;
 
   /**
-   * Once the receiver reaches the buffer limit or some other condition requires the current
-   * buffered messages to be flushed, needsFlush needs to be set to true. The progress method
-   * will look at this and flush the current buffer if needsFlush is true.
-   */
-  protected boolean needsFlush;
-
-  /**
    * The dataflow operation that is related to the class instance. Ex - Reduce, Gather, etc.
    */
   protected DataFlowOperation dataFlowOperation;
@@ -80,6 +74,13 @@ public abstract class KeyedReceiver implements MessageReceiver {
   protected Map<Integer, Map<Object, Queue<Object>>> messages = new HashMap<>();
 
   /**
+   * Objects that are inserted into this queue are objects that can be sent out from the receiver
+   * the progress method removes items from this queue and sends them. The onMessage method inserts
+   * objects into this queue
+   */
+  protected Map<Integer, BlockingQueue<Object>> sendQueue = new HashMap<>();
+
+  /**
    * Tracks if the partial receiver has completed processing for a given target
    */
   protected Map<Integer, Boolean> batchDone = new HashMap<>();
@@ -88,6 +89,13 @@ public abstract class KeyedReceiver implements MessageReceiver {
    * Tracks if the empty message has been sent for each target
    */
   protected Map<Integer, Boolean> isEmptySent = new HashMap<>();
+
+  /**
+   * Indicates whether the receiver instance is a final receiver or not. The value is set to
+   * false by default. If the receiver is a final receiver the sendQueue data structure is not used
+   * the data is always kept in the messages data structure for efficiency
+   */
+  protected boolean isFinalReceiver = false;
 
   @Override
   public void init(Config cfg, DataFlowOperation op, Map<Integer, List<Integer>> expectedIds) {
@@ -107,14 +115,15 @@ public abstract class KeyedReceiver implements MessageReceiver {
       messages.put(expectedIdPerTarget.getKey(), new HashMap<>());
       batchDone.put(expectedIdPerTarget.getKey(), false);
       isEmptySent.put(expectedIdPerTarget.getKey(), false);
-
+      sendQueue.put(expectedIdPerTarget.getKey(),
+          new ArrayBlockingQueue<Object>(keyLimit * limitPerKey));
     }
   }
 
   @Override
   public boolean onMessage(int source, int path, int target, int flags, Object object) {
     // add the object to the map
-    boolean canAdd = true;
+    boolean added;
 
     if (messages.get(target) == null) {
       throw new RuntimeException(String.format("Executor %d, Partial receive error. Receiver did"
@@ -129,18 +138,26 @@ public abstract class KeyedReceiver implements MessageReceiver {
 
     if ((flags & MessageFlags.END) == MessageFlags.END) {
       finishedMessages.put(source, true);
+      if (!isFinalReceiver && isSourcesFinished(target)) {
+        return moveMessagesToSendQueue(target, messages.get(target));
+      }
       return true;
     }
 
-    canAdd = offerMessage(target, object);
+    added = offerMessage(target, object);
 
-    if (canAdd) {
+    if (added) {
       if ((flags & MessageFlags.LAST) == MessageFlags.LAST) {
         finishedMessages.put(source, true);
+        //TODO: the finish of the move may not happen for LAST flags since the method to move
+        //TODO: may return false
+        if (!isFinalReceiver && isSourcesFinished(target)) {
+          moveMessagesToSendQueue(target, messages.get(target));
+        }
       }
     }
 
-    return canAdd;
+    return added;
   }
 
   /**
@@ -155,10 +172,10 @@ public abstract class KeyedReceiver implements MessageReceiver {
   @SuppressWarnings("rawtypes")
   protected boolean offerMessage(int target, Object object) {
     Map<Object, Queue<Object>> messagesPerTarget = messages.get(target);
-    if (messagesPerTarget.size() > keyLimit) {
-      needsFlush = true;
+    if (!isFinalReceiver && messagesPerTarget.size() > keyLimit) {
       LOG.fine(String.format("Executor %d Partial cannot add any further keys needs flush ",
           executor));
+      moveMessagesToSendQueue(target, messagesPerTarget);
       return false;
     }
 
@@ -200,7 +217,6 @@ public abstract class KeyedReceiver implements MessageReceiver {
         if (messagesPerTarget.get(keyedContent.getKey()).size() < limitPerKey) {
           return messagesPerTarget.get(keyedContent.getKey()).add(keyedContent.getValue());
         } else {
-          needsFlush = true;
           LOG.fine(String.format("Executor %d Partial cannot add any further values for key "
               + "needs flush ", executor));
           return false;
@@ -226,5 +242,39 @@ public abstract class KeyedReceiver implements MessageReceiver {
       Map<Integer, Boolean> finishedMessages = finishedSources.get(target);
       finishedMessages.put(source, true);
     }
+  }
+
+  /**
+   * moves all the buffered messages into the sendQueue for the given target
+   *
+   * @param target target for which the move needs to be done
+   * @return true if the messagesPerTarget is not empty at the end of the moving process or false
+   * otherwise
+   */
+  protected boolean moveMessagesToSendQueue(int target,
+                                            Map<Object, Queue<Object>> messagesPerTarget) {
+    BlockingQueue<Object> targetSendQueue = sendQueue.get(target);
+    messagesPerTarget.entrySet().removeIf(entry -> {
+      KeyedContent send = new KeyedContent(entry.getKey(), entry.getValue(),
+          dataFlowOperation.getKeyType(), dataFlowOperation.getDataType());
+      return targetSendQueue.offer(send);
+    });
+
+    return messagesPerTarget.isEmpty();
+  }
+
+  /**
+   * checks if the sources have finished for a given target.
+   *
+   * @param target the target to be checked
+   * @return true if all the sources for the given target are finished or false otherwise
+   */
+  protected boolean isSourcesFinished(int target) {
+    Map<Integer, Boolean> finishedForTarget = finishedSources.get(target);
+    boolean isDone = true;
+    for (Boolean isSourceDone : finishedForTarget.values()) {
+      isDone &= isSourceDone;
+    }
+    return isDone;
   }
 }
