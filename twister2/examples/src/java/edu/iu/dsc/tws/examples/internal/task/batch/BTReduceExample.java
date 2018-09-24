@@ -14,6 +14,7 @@ package edu.iu.dsc.tws.examples.internal.task.batch;
 import java.util.List;
 import java.util.logging.Logger;
 
+import edu.iu.dsc.tws.api.task.TaskGraphBuilder;
 import edu.iu.dsc.tws.comms.api.Op;
 import edu.iu.dsc.tws.data.api.DataType;
 import edu.iu.dsc.tws.examples.internal.task.BenchTaskWorker;
@@ -25,27 +26,21 @@ import edu.iu.dsc.tws.task.batch.BaseBatchSource;
 public class BTReduceExample extends BenchTaskWorker {
   private static final Logger LOG = Logger.getLogger(BTReduceExample.class.getName());
 
-  private static final String EDGE = "edge";
-
-  private static int psource = 4;
-
-  private static int psink = 1;
-
-  private static final Op OPERATION = Op.SUM;
-
-  private static final DataType DATA_TYPE = DataType.INTEGER;
-
   @Override
-  public void intialize() {
+  public TaskGraphBuilder buildTaskGraph() {
     List<Integer> taskStages = jobParameters.getTaskStages();
-    psource = taskStages.get(0);
-    psink = taskStages.get(1);
+    int psource = taskStages.get(0);
+    int psink = taskStages.get(1);
+    Op operation = Op.SUM;
+    DataType dataType = DataType.INTEGER;
+    String edge = "edge";
     TaskExamples taskExamples = new TaskExamples();
-    BaseBatchSource g = taskExamples.getBatchSourceClass("reduce", EDGE);
+    BaseBatchSource g = taskExamples.getBatchSourceClass("reduce", edge);
     BaseBatchSink r = taskExamples.getBatchSinkClass("reduce");
     taskGraphBuilder.addSource(SOURCE, g, psource);
     computeConnection = taskGraphBuilder.addSink(SINK, r, psink);
-    computeConnection.reduce(SOURCE, EDGE, OPERATION, DATA_TYPE);
+    computeConnection.reduce(SOURCE, edge, operation, dataType);
+    return taskGraphBuilder;
   }
 
 }
