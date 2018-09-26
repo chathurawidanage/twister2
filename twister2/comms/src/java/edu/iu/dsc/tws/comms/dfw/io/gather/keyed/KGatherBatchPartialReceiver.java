@@ -9,25 +9,25 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
-package edu.iu.dsc.tws.comms.dfw.io.reduce.keyed;
+
+package edu.iu.dsc.tws.comms.dfw.io.gather.keyed;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Logger;
 
 import edu.iu.dsc.tws.comms.api.MessageFlags;
-import edu.iu.dsc.tws.comms.api.ReduceFunction;
+import edu.iu.dsc.tws.comms.dfw.io.KeyedReceiver;
 
 /**
- * Keyed reduce receiver for batch mode
+ * Abstract class that is extended by keyed reduce batch receivers
  */
-public class KReduceBatchPartialReceiver extends KReduceBatchReceiver {
-  private static final Logger LOG = Logger.getLogger(KReduceBatchPartialReceiver.class.getName());
+public class KGatherBatchPartialReceiver extends KeyedReceiver {
+  private static final Logger LOG = Logger.getLogger(KGatherBatchPartialReceiver.class.getName());
 
 
-  public KReduceBatchPartialReceiver(int dest, ReduceFunction function) {
-    this.reduceFunction = function;
+  public KGatherBatchPartialReceiver(int dest, int limitPerKey) {
     this.destination = dest;
-    this.limitPerKey = 1;
+    this.limitPerKey = limitPerKey;
   }
 
   @Override
@@ -42,6 +42,7 @@ public class KReduceBatchPartialReceiver extends KReduceBatchReceiver {
         needsFurtherProgress = !checkIfEmptyIsSent(target);
         continue;
       }
+
 
       // now check weather we have the messages for this source to be sent
       BlockingQueue<Object> targetSendQueue = sendQueue.get(target);
@@ -97,7 +98,6 @@ public class KReduceBatchPartialReceiver extends KReduceBatchReceiver {
     return needsFurtherProgress;
   }
 
-
   /**
    * checks if the Empty message was sent for this target and sends it if not sent and possible to
    * send
@@ -117,5 +117,4 @@ public class KReduceBatchPartialReceiver extends KReduceBatchReceiver {
     }
     return isSent;
   }
-
 }

@@ -11,27 +11,31 @@
 //  limitations under the License.
 package edu.iu.dsc.tws.comms.dfw.io.reduce.keyed;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Logger;
 
 import edu.iu.dsc.tws.comms.api.ReduceFunction;
 import edu.iu.dsc.tws.comms.api.SingularReceiver;
 
 /**
- * Created by pulasthi on 9/20/18.
+ * Keyed reduce final receiver for streaming  mode
  */
-public class KReduceBatchFinalReceiver extends KReduceBatchReceiver {
-  private static final Logger LOG = Logger.getLogger(KReduceBatchFinalReceiver.class.getName());
+public class KReduceStreamingFinalReceiver extends KReduceStreamingReceiver {
+  private static final Logger LOG = Logger.getLogger(KReduceStreamingFinalReceiver.class.getName());
 
   /**
    * Final receiver that get the reduced values for the operation
    */
   private SingularReceiver singularReceiver;
 
-  public KReduceBatchFinalReceiver(ReduceFunction reduce, SingularReceiver receiver) {
+  public KReduceStreamingFinalReceiver(ReduceFunction reduce, SingularReceiver receiver,
+                                       int window) {
     this.reduceFunction = reduce;
     this.singularReceiver = receiver;
     this.limitPerKey = 1;
     this.isFinalReceiver = true;
+    this.windowSize = window;
+    this.localWindowCount = 0;
   }
 
   @Override
@@ -44,16 +48,23 @@ public class KReduceBatchFinalReceiver extends KReduceBatchReceiver {
         continue;
       }
 
+      BlockingQueue<Object> targetSendQueue = sendQueue.get(target);
       sourcesFinished = isSourcesFinished(target);
       if (!sourcesFinished && !(dataFlowOperation.isDelegeteComplete()
           && messages.get(target).isEmpty())) {
         needsFurtherProgress = true;
       }
 
-      if (sourcesFinished && dataFlowOperation.isDelegeteComplete()) {
+      if (!targetSendQueue.isEmpty()) {
+        Object current;
+        while ((current = targetSendQueue.poll()) != null) {
+          singularReceiver.receive(target, current);
+        }
+      }
+
+      if (sourcesFinished && dataFlowOperation.isDelegeteComplete()
+          && targetSendQueue.isEmpty()) {
         batchDone.put(target, true);
-        //TODO: check if we can simply remove the data, that is use messages.remove()
-        singularReceiver.receive(target, messages.get(target));
       }
 
 

@@ -90,6 +90,12 @@ public class KMeansJob extends TaskWorker {
     DataSet<Object> datapoints = new DataSet<>(0);
     DataSet<Object> centroids = new DataSet<>(1);
 
+    //Set the configuration values in the configuration parameters.
+    KMeansDataGenerator.generateDataPointsFile("/home/kgovind/hadoop-2.9.0/input.txt",
+        100, 2, 100, 500);
+    KMeansDataGenerator.generateCentroidFile("/home/kgovind/hadoop-2.9.0/centroids.txt",
+        4, 2, 100, 500);
+
     //Reading File
     KMeansFileReader kMeansFileReader = new KMeansFileReader();
     double[][] dataPoint = kMeansFileReader.readDataPoints(
@@ -99,7 +105,7 @@ public class KMeansJob extends TaskWorker {
 
     DataFlowTaskGraph graph = graphBuilder.build();
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 2; i++) {
       datapoints.addPartition(0, dataPoint);
       centroids.addPartition(1, centroid);
 
@@ -141,7 +147,7 @@ public class KMeansJob extends TaskWorker {
           context.taskIndex(), 2, startIndex, endIndex);
       KMeansCenters kMeansCenters = kMeansCalculator.calculate();
 
-      LOG.info("Task Index:::" + context.taskIndex() + "\t"
+      LOG.fine("Task Index:::" + context.taskIndex() + "\t"
           + "Calculated Centroid Value::::" + Arrays.deepToString(centroid));
       context.writeEnd("all-reduce", kMeansCenters);
     }
@@ -168,18 +174,21 @@ public class KMeansJob extends TaskWorker {
   private static class KMeansAllReduceTask extends BaseBatchSink implements Collector<Object> {
     private static final long serialVersionUID = -5190777711234234L;
 
+    private double[][] centroids;
     private double[][] newCentroids;
 
     @Override
     public boolean execute(IMessage message) {
       LOG.log(Level.FINE, "Received message: " + message.getContent());
-      newCentroids = ((KMeansCenters) message.getContent()).getCenters();
-      for (int i = 0; i < newCentroids.length; i++) {
-        for (int j = 0; j < newCentroids[0].length - 1; j++) {
-          double newVal =  newCentroids[i][j] / newCentroids[i][newCentroids[0].length - 1];
+      centroids = ((KMeansCenters) message.getContent()).getCenters();
+      newCentroids = new double[centroids.length][centroids[0].length - 1];
+      for (int i = 0; i < centroids.length; i++) {
+        for (int j = 0; j < centroids[0].length - 1; j++) {
+          double newVal =  centroids[i][j] / centroids[i][centroids[0].length - 1];
           newCentroids[i][j] = newVal;
         }
       }
+      LOG.fine("New Centroid Values:" + Arrays.deepToString(newCentroids));
       return true;
     }
 
@@ -189,6 +198,9 @@ public class KMeansJob extends TaskWorker {
     }
   }
 
+  /**
+   * This class aggregates the cluster centroid values and sum the new centroid values.
+   */
   public class CentroidAggregator implements IFunction {
     private static final long serialVersionUID = -254264120110286748L;
 
@@ -224,7 +236,7 @@ public class KMeansJob extends TaskWorker {
         }
       }
       ret.setCenters(newCentroids);
-      LOG.info("Kmeans Centers final:" + Arrays.deepToString(newCentroids));
+      LOG.fine("Kmeans Centers final:" + Arrays.deepToString(newCentroids));
       return ret;
     }
   }

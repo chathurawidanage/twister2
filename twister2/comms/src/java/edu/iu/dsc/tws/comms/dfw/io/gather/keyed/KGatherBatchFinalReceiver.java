@@ -9,28 +9,29 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
-package edu.iu.dsc.tws.comms.dfw.io.reduce.keyed;
+
+package edu.iu.dsc.tws.comms.dfw.io.gather.keyed;
 
 import java.util.logging.Logger;
 
-import edu.iu.dsc.tws.comms.api.ReduceFunction;
-import edu.iu.dsc.tws.comms.api.SingularReceiver;
+import edu.iu.dsc.tws.comms.api.BulkReceiver;
+import edu.iu.dsc.tws.comms.dfw.io.KeyedReceiver;
 
 /**
  * Created by pulasthi on 9/20/18.
  */
-public class KReduceBatchFinalReceiver extends KReduceBatchReceiver {
-  private static final Logger LOG = Logger.getLogger(KReduceBatchFinalReceiver.class.getName());
+public class KGatherBatchFinalReceiver extends KeyedReceiver {
+  private static final Logger LOG = Logger.getLogger(KGatherBatchFinalReceiver.class.getName());
 
   /**
    * Final receiver that get the reduced values for the operation
    */
-  private SingularReceiver singularReceiver;
+  private BulkReceiver bulkReceiver;
 
-  public KReduceBatchFinalReceiver(ReduceFunction reduce, SingularReceiver receiver) {
-    this.reduceFunction = reduce;
-    this.singularReceiver = receiver;
-    this.limitPerKey = 1;
+  public KGatherBatchFinalReceiver(BulkReceiver receiver,
+                                   int limitPerKey) {
+    this.bulkReceiver = receiver;
+    this.limitPerKey = limitPerKey;
     this.isFinalReceiver = true;
   }
 
@@ -53,7 +54,7 @@ public class KReduceBatchFinalReceiver extends KReduceBatchReceiver {
       if (sourcesFinished && dataFlowOperation.isDelegeteComplete()) {
         batchDone.put(target, true);
         //TODO: check if we can simply remove the data, that is use messages.remove()
-        singularReceiver.receive(target, messages.get(target));
+        //bulkReceiver.receive(target, messages.get(target));
       }
 
 

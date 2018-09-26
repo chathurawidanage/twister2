@@ -9,6 +9,18 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
+
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 package edu.iu.dsc.tws.comms.dfw.io.reduce.keyed;
 
 import java.util.concurrent.BlockingQueue;
@@ -18,16 +30,19 @@ import edu.iu.dsc.tws.comms.api.MessageFlags;
 import edu.iu.dsc.tws.comms.api.ReduceFunction;
 
 /**
- * Keyed reduce receiver for batch mode
+ * Keyed reduce partial receiver for streaming  mode
  */
-public class KReduceBatchPartialReceiver extends KReduceBatchReceiver {
-  private static final Logger LOG = Logger.getLogger(KReduceBatchPartialReceiver.class.getName());
+public class KReduceStreamingPartialReceiver extends KReduceStreamingReceiver {
+  private static final Logger LOG = Logger.
+      getLogger(KReduceStreamingPartialReceiver.class.getName());
 
 
-  public KReduceBatchPartialReceiver(int dest, ReduceFunction function) {
+  public KReduceStreamingPartialReceiver(int dest, ReduceFunction function, int window) {
     this.reduceFunction = function;
     this.destination = dest;
     this.limitPerKey = 1;
+    this.windowSize = window;
+    this.localWindowCount = 0;
   }
 
   @Override
@@ -55,6 +70,10 @@ public class KReduceBatchPartialReceiver extends KReduceBatchReceiver {
       if (!targetSendQueue.isEmpty() || sourcesFinished) {
         int flags = 0;
 
+        //In reduce a flush is only needed when the number of keys exceed the key limit
+        //So we flush the keys and remove them from the messages list.This would be the same
+        //when the sources are finished.
+
         //Used to make sure that the code is not stuck in this while loop if the send keeps getting
         //rejected
         boolean canProgress = true;
@@ -70,7 +89,6 @@ public class KReduceBatchPartialReceiver extends KReduceBatchReceiver {
             canProgress = false;
             needsFurtherProgress = true;
           }
-
         }
       }
 
