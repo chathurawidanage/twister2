@@ -20,6 +20,7 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.iu.dsc.tws.common.config.Config;
@@ -42,6 +43,10 @@ public class TWSTCPChannel implements TWSChannel {
   private int sendCount = 0;
 
   private int pendingSendCount = 0;
+  private int sendCompletions = 0;
+
+  private int receivePosted = 0;
+  private int receiveCompletions = 0;
 
   @SuppressWarnings("VisibilityModifier")
   private class Request {
@@ -170,6 +175,7 @@ public class TWSTCPChannel implements TWSChannel {
   private void postReceive(TCPReceiveRequests requests) {
     DataBuffer byteBuffer = requests.availableBuffers.poll();
     if (byteBuffer != null) {
+      receivePosted++;
       // post the receive
       TCPMessage request = postReceive(requests.rank, requests.edge, byteBuffer);
       requests.pendingRequests.add(new Request(request, byteBuffer));
@@ -187,11 +193,13 @@ public class TWSTCPChannel implements TWSChannel {
     return comm.iRecv(byteBuffer.getByteBuffer(), byteBuffer.getCapacity(), rank, stream);
   }
 
-  private int completedReceives = 0;
   /**
    * Progress the communications that are pending
    */
   public void progress() {
+    LOG.log(Level.INFO, String.format("%d recvPosted: %d recvComp: %d sendPosted: %d "
+            + "sendComp: %d sends: %d", executor, receivePosted, receiveCompletions,
+        pendingSendCount, sendCompletions, sendCount));
     // we should rate limit here
     while (pendingSends.size() > 0) {
       // post the message
@@ -228,6 +236,7 @@ public class TWSTCPChannel implements TWSChannel {
         sendRequests.callback.onSendComplete(sendRequests.rank,
             sendRequests.edge, sendRequests.message);
         sendRequestsIterator.remove();
+        sendCompletions++;
       }
     }
 
@@ -247,6 +256,7 @@ public class TWSTCPChannel implements TWSChannel {
           receiveRequests.callback.onReceiveComplete(
               receiveRequests.rank, receiveRequests.edge, r.buffer);
           requestIterator.remove();
+          receiveCompletions++;
           if (receiveRequests.pendingRequests.size() == 0
               && receiveRequests.availableBuffers.size() == 0) {
             //We do not have any buffers to receive messages so we need to free a buffer
