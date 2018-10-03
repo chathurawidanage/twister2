@@ -105,6 +105,14 @@ public abstract class BenchWorker implements IWorker {
       // we should communicationProgress the communication directive
       progressCommunication();
     }
+
+    long time = System.currentTimeMillis();
+    while (time + 10000 > System.currentTimeMillis()) {
+      // communicationProgress the channel
+      channel.progress();
+      // we should communicationProgress the communication directive
+      progressCommunication();
+    }
   }
 
   protected abstract void progressCommunication();
