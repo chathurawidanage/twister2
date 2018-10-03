@@ -16,3 +16,5 @@ twister2.filesystem.shared: true
 twister2.nomad.shell.script: "nomad.sh"
 # path to the system core package
 twister2.system.package.uri: "${TWISTER2_DIST}/twister2-core-0.1.0.tar.gz"
+# weather we are  using
+twister2.logging.sandbox.logging: true

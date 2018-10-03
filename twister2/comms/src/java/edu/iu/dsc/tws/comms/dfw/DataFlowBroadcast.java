@@ -184,7 +184,7 @@ public class DataFlowBroadcast implements DataFlowOperation, ChannelReceiver {
         lock.unlock();
       }
     }
-    return true;
+    return false;
   }
 
   @Override

@@ -197,9 +197,6 @@ public class TWSTCPChannel implements TWSChannel {
    * Progress the communications that are pending
    */
   public void progress() {
-    LOG.log(Level.INFO, String.format("%d recvPosted: %d recvComp: %d sendPosted: %d "
-            + "sendComp: %d sends: %d", executor, receivePosted, receiveCompletions,
-        pendingSendCount, sendCompletions, sendCount));
     // we should rate limit here
     while (pendingSends.size() > 0) {
       // post the message
@@ -266,6 +263,10 @@ public class TWSTCPChannel implements TWSChannel {
         }
       }
     }
+
+    LOG.log(Level.INFO, String.format("%d recvPosted: %d recvComp: %d sendPosted: %d "
+            + "sendComp: %d sends: %d", executor, receivePosted, receiveCompletions,
+        pendingSendCount, sendCompletions, sendCount));
 
     comm.progress();
   }
