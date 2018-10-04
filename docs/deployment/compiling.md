@@ -1,4 +1,4 @@
-# Compiling
+# Compiling Twister2
 
 Twister2 relies on the [Bazel build](https://bazel.build/) system to provide a flexible and fast build. Twister2 has been tested on Bazel 0.8.1 version and it is recommended to use it for building.
 
