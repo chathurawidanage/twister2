@@ -25,7 +25,7 @@ import edu.iu.dsc.tws.common.net.tcp.request.RRClient;
 import edu.iu.dsc.tws.common.net.tcp.request.RequestID;
 import edu.iu.dsc.tws.proto.checkpoint.Checkpoint;
 import edu.iu.dsc.tws.task.streaming.BaseStreamSource;
-import static java.lang.Math.max;
+//import static java.lang.Math.max;
 
 public abstract class SourceCheckpointableTask extends BaseStreamSource {
   private static final long serialVersionUID = -254264903510214728L;
@@ -83,10 +83,6 @@ public abstract class SourceCheckpointableTask extends BaseStreamSource {
               " currentCheckpointInterval: " + currentCheckpointInterval
       );
       checkForBarrier();
-      intermediateMessageCount = 0;
-      currentCheckpointInterval = max(
-          (int) (currentCheckpointInterval - currentCheckpointInterval * 0.5),
-          1);
     }
 
   }
@@ -184,6 +180,11 @@ public abstract class SourceCheckpointableTask extends BaseStreamSource {
           currentCheckpointInterval = globalCheckpointInterval;
           intermediateMessageCount = 0;
           currentBarrierID++;
+        } else {
+          intermediateMessageCount = 0;
+//          currentCheckpointInterval = max(
+//              (int) (currentCheckpointInterval - currentCheckpointInterval * 0.5),
+//              1);
         }
       }
     }

@@ -123,10 +123,10 @@ public class SourceSinkDiscoveryExample implements IWorker {
 
     @Override
     public void execute() {
-      if (count % 1000000 == 0) {
-        checkForBarrier();
-      }
-      if (count % 1000000 == 0) {
+//      if (count % 1000000 == 0) {
+//        checkForBarrier();
+//      }
+      if (count % 25000 == 0) {
         ctx.write("partition-edge", "Hello");
         System.out.println("count is " + count);
       }
@@ -137,7 +137,7 @@ public class SourceSinkDiscoveryExample implements IWorker {
 
     @Override
     public void prepare(Config cfg, TaskContext context) {
-      connect(cfg, context);
+//      connect(cfg, context);
       this.ctx = context;
     }
   }
