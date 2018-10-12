@@ -92,7 +92,7 @@ public abstract class SourceCheckpointableTask extends BaseStreamSource {
 
   public void checkForTimeInterval() {
     if (getResponsePending()) {
-      currentCheckpointInterval = (long) (currentCheckpointInterval*1.25);
+      currentCheckpointInterval = (long) (currentCheckpointInterval * 1.25);
       return;
     }
     long interval = System.currentTimeMillis() - lastCheckpointTime;
