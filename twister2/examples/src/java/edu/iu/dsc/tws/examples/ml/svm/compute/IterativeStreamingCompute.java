@@ -21,6 +21,7 @@ import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.TaskContext;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.BaseCompute;
 import edu.iu.dsc.tws.api.config.Config;
 import edu.iu.dsc.tws.api.dataset.DataObject;
@@ -28,14 +29,13 @@ import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.dataset.partition.EntityPartition;
 import edu.iu.dsc.tws.examples.ml.svm.constant.Constants;
 import edu.iu.dsc.tws.examples.ml.svm.exceptions.MatrixMultiplicationException;
-import edu.iu.dsc.tws.examples.ml.svm.integration.test.IReceptor;
 import edu.iu.dsc.tws.examples.ml.svm.math.Matrix;
 import edu.iu.dsc.tws.examples.ml.svm.util.MLUtils;
 import edu.iu.dsc.tws.examples.ml.svm.util.SVMJobParameters;
 import edu.iu.dsc.tws.examples.ml.svm.util.TrainedModel;
 
 public class IterativeStreamingCompute extends BaseCompute<double[]>
-    implements Collector<double[]>, IReceptor<double[][]> {
+    implements Collector<double[]>, Receptor<double[][]> {
   private static final long serialVersionUID = 332173590941256461L;
   private static final Logger LOG = Logger.getLogger(IterativeStreamingCompute.class.getName());
   private List<double[]> aggregatedModels = new ArrayList<>();
