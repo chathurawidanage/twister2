@@ -28,6 +28,7 @@ import edu.iu.dsc.tws.api.compute.executor.ExecutionPlan;
 import edu.iu.dsc.tws.api.compute.graph.ComputeGraph;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.BaseCompute;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
@@ -46,13 +47,12 @@ import edu.iu.dsc.tws.task.impl.ComputeGraphBuilder;
 import edu.iu.dsc.tws.task.impl.TaskWorker;
 
 
-
 public class SingleSourceShortestPathWorker extends TaskWorker {
   private static final Logger LOG = Logger.
       getLogger(SingleSourceShortestPathWorker.class.getName());
 
   private static boolean globaliterationStatus = true;
-  private  static String sourceVertexGlobal = null;
+  private static String sourceVertexGlobal = null;
 
   @Override
   public void execute() {
@@ -76,14 +76,9 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
     //Actual execution for the first taskgraph
     taskExecutor.execute(datapointsTaskGraph, firstGraphExecutionPlan);
     //Retrieve the output of the first task graph
-    DataObject<Object> graphPartitionData = taskExecutor.getOutput(
-        datapointsTaskGraph, firstGraphExecutionPlan, "Graphdatasink");
+    DataObject<Object> graphPartitionData = taskExecutor.getOutput(GraphDataSink.IO_GRAPH_DATA);
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-
-
 
 
     //Build the second taskgraph
@@ -95,9 +90,8 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
     taskExecutor.execute(graphInitialValueTaskGraph, secondGraphExecutionPlan);
     //Retrieve the output of the second task graph
     DataObject<Object> graphInitialValue = taskExecutor.getOutput(
-        graphInitialValueTaskGraph, secondGraphExecutionPlan, "ssspInitialSink");
-
-
+        SsspInitialSink.IO_SSSP_DATA_POINTS
+    );
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -109,9 +103,7 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
     ExecutionPlan plan = taskExecutor.plan(sssptaskgraph);
 
     int itr = 0;
-    while (globaliterationStatus)  {
-
-
+    while (globaliterationStatus) {
 
 
       taskExecutor.addInput(sssptaskgraph, plan,
@@ -130,9 +122,6 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
     taskExecutor.waitFor(sssptaskgraph, plan);
 
     System.out.println("Tatol iteration: " + itr);
-
-
-
 
 
   }
@@ -169,7 +158,6 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
 
     //Build the first taskgraph
     return datapointsTaskGraphBuilder.build();
-
 
 
   }
@@ -249,18 +237,16 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
 
     private HashMap<String, SsspVertex> graphData;
     private HashMap<String, SsspVertexStatus> graphSsspStatus;
-    private DataObject<?> graphObject = null;
-    private DataObject<?> graphObjectvalues = null;
+    private DataPartition<?> graphObject = null;
+    private DataPartition<?> graphObjectvalues = null;
 
     private int count = 0;
+
     @Override
     public void execute() {
+      graphData = (HashMap<String, SsspVertex>) graphObject.first();
 
-      DataPartition<?> dataPartition = graphObject.getPartition(context.taskIndex());
-      graphData = (HashMap<String, SsspVertex>) dataPartition.getConsumer().next();
-
-      DataPartition<?> centroidPartition = graphObjectvalues.getPartition(context.taskIndex());
-      graphSsspStatus = (HashMap<String, SsspVertexStatus>) centroidPartition.getConsumer().next();
+      graphSsspStatus = (HashMap<String, SsspVertexStatus>) graphObjectvalues.first();
 
       if (graphSsspStatus != null) {
 
@@ -320,13 +306,18 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
     }
 
     @Override
-    public void add(String name, DataObject<?> data) {
-      if ("graphData".equals(name)) {
+    public void add(String name, DataPartition<?> data) {
+      if (GraphDataSink.IO_GRAPH_DATA.equals(name)) {
         this.graphObject = data;
       }
-      if ("graphInitialValue".equals(name)) {
+      if (SsspInitialSink.IO_SSSP_DATA_POINTS.equals(name)) {
         this.graphObjectvalues = data;
       }
+    }
+
+    @Override
+    public IONames getReceivableNames() {
+      return IONames.declare(GraphDataSink.IO_GRAPH_DATA, SsspInitialSink.IO_SSSP_DATA_POINTS);
     }
 
   }
@@ -376,8 +367,13 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
     }
 
     @Override
-    public DataPartition<HashMap<String, SsspVertexStatus>> get() {
-      return new EntityPartition<>(context.taskIndex(), finalout);
+    public IONames getCollectibleNames() {
+      return IONames.declare(SsspInitialSink.IO_SSSP_DATA_POINTS);
+    }
+
+    @Override
+    public DataPartition<HashMap<String, SsspVertexStatus>> get(String name) {
+      return new EntityPartition<>(finalout);
     }
 
     @Override

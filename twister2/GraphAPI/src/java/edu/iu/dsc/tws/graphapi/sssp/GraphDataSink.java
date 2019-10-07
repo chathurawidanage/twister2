@@ -15,11 +15,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
 
 import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.TaskContext;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.config.Config;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
@@ -29,7 +29,7 @@ import edu.iu.dsc.tws.graphapi.vertex.SsspVertex;
 
 public class GraphDataSink extends BaseSink implements Collector {
 
-  private static final Logger LOG = Logger.getLogger(GraphDataSink.class.getName());
+  public static String IO_GRAPH_DATA = "graph-data";
 
   private static final long serialVersionUID = -1L;
 
@@ -60,7 +60,12 @@ public class GraphDataSink extends BaseSink implements Collector {
   }
 
   @Override
-  public DataPartition<HashMap<String, SsspVertex>> get() {
-    return new EntityPartition<>(context.taskIndex(), dataPointsLocal);
+  public IONames getCollectibleNames() {
+    return IONames.declare(IO_GRAPH_DATA);
+  }
+
+  @Override
+  public DataPartition<HashMap<String, SsspVertex>> get(String name) {
+    return new EntityPartition<>(dataPointsLocal);
   }
 }
