@@ -59,8 +59,7 @@ public class TaskWorkerDataLoader extends TaskWorker {
     ComputeGraph datapointsTaskGraph = computeGraphBuilder.build();
     ExecutionPlan firstGraphExecutionPlan = taskExecutor.plan(datapointsTaskGraph);
     taskExecutor.execute(datapointsTaskGraph, firstGraphExecutionPlan);
-    DataObject<Object> dataPointsObject = taskExecutor.getOutput(
-        datapointsTaskGraph, firstGraphExecutionPlan, "datapointsink");
+    DataObject<Object> dataPointsObject = taskExecutor.getOutput(DataObjectSink.IO_DATA_POINTS);
     LOG.info("Total Partitions : " + dataPointsObject.getPartitions().length);
     showAllUnits(dataPointsObject);
   }
@@ -112,6 +111,4 @@ public class TaskWorkerDataLoader extends TaskWorker {
     }
 
   }
-
-
 }

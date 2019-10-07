@@ -174,8 +174,7 @@ public class SvmSgdAdvancedRunner extends TaskWorker {
     datapointsTaskGraph.setGraphName("training-data-loading-graph");
     ExecutionPlan firstGraphExecutionPlan = taskExecutor.plan(datapointsTaskGraph);
     taskExecutor.execute(datapointsTaskGraph, firstGraphExecutionPlan);
-    data = taskExecutor.getOutput(
-        datapointsTaskGraph, firstGraphExecutionPlan, Constants.SimpleGraphConfig.DATA_OBJECT_SINK);
+    data = taskExecutor.getOutput(DataObjectSink.IO_DATA_POINTS);
     if (data == null) {
       throw new NullPointerException("Something Went Wrong in Loading Training Data");
     } else {
@@ -208,8 +207,7 @@ public class SvmSgdAdvancedRunner extends TaskWorker {
     datapointsTaskGraph.setGraphName("weight-vector-loading-graph");
     ExecutionPlan firstGraphExecutionPlan = taskExecutor.plan(datapointsTaskGraph);
     taskExecutor.execute(datapointsTaskGraph, firstGraphExecutionPlan);
-    data = taskExecutor.getOutput(
-        datapointsTaskGraph, firstGraphExecutionPlan, Constants.SimpleGraphConfig.DATA_OBJECT_SINK);
+    data = taskExecutor.getOutput(DataObjectSink.IO_DATA_POINTS);
     if (data == null) {
       throw new NullPointerException("Something Went Wrong in Loading Weight Vector");
     } else {
@@ -245,9 +243,7 @@ public class SvmSgdAdvancedRunner extends TaskWorker {
     datapointsTaskGraph1.setGraphName("testing-data-loading-graph");
     ExecutionPlan firstGraphExecutionPlan1 = taskExecutor.plan(datapointsTaskGraph1);
     taskExecutor.execute(datapointsTaskGraph1, firstGraphExecutionPlan1);
-    data = taskExecutor.getOutput(
-        datapointsTaskGraph1, firstGraphExecutionPlan1,
-        Constants.SimpleGraphConfig.DATA_OBJECT_SINK_TESTING);
+    data = taskExecutor.getOutput(DataObjectSink.IO_DATA_POINTS);
     if (data == null) {
       throw new NullPointerException("Something Went Wrong in Loading Testing Data");
     } else {
