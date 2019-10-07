@@ -18,12 +18,6 @@ import edu.iu.dsc.tws.api.dataset.DataPartition;
  * Special task for collecting the output from tasks
  */
 public interface Collector {
-  /**
-   * get the collected valued
-   *
-   * @return get the default output
-   */
-  DataPartition<?> get();
 
   /**
    * get the collected valued
@@ -47,7 +41,5 @@ public interface Collector {
    * @return set of names of collectbles
    */
 
-  default IONames getCollectibleNames() {
-    return IONames.declare();
-  }
+  IONames getCollectibleNames();
 }
