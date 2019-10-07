@@ -25,9 +25,7 @@ public interface Collector {
    * @param name name of the value to collect
    * @return the partition of the data
    */
-  default DataPartition<?> get(String name) {
-    return null;
-  }
+  DataPartition<?> get(String name);
 
   /**
    * This method should return a set of collectible names, that can be collected from this

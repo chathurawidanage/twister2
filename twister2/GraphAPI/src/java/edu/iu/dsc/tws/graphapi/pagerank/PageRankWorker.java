@@ -59,6 +59,7 @@ import edu.iu.dsc.tws.api.compute.executor.ExecutionPlan;
 import edu.iu.dsc.tws.api.compute.graph.ComputeGraph;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.BaseCompute;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
@@ -74,8 +75,6 @@ import edu.iu.dsc.tws.task.impl.ComputeConnection;
 import edu.iu.dsc.tws.task.impl.ComputeGraphBuilder;
 import edu.iu.dsc.tws.task.impl.TaskWorker;
 import edu.iu.dsc.tws.task.impl.function.ReduceFn;
-
-
 
 
 public class PageRankWorker extends TaskWorker {
@@ -107,7 +106,7 @@ public class PageRankWorker extends TaskWorker {
     taskExecutor.execute(datapointsTaskGraph, executionPlan);
     //Retrieve the output of the first task graph
     DataObject<Object> graphPartitionData = taskExecutor.getOutput(
-        datapointsTaskGraph, executionPlan, "Graphdatasink");
+        DataObjectSink.IO_GRAPH_DATA);
 
     /* the out of the first graph would like below
     * task Id: 0
@@ -126,7 +125,7 @@ public class PageRankWorker extends TaskWorker {
     taskExecutor.execute(graphInitialValueTaskGraph, executionPlan1);
     //Retrieve the output of the first task graph
     DataObject<Object> graphInitialPagerankValue = taskExecutor.getOutput(
-        graphInitialValueTaskGraph, executionPlan1, "pageRankValueHolderSink");
+        PageRankValueHolderSink.IO_PAGE_RANK_VALUE);
 
 
     /* the output of second graph should like below
@@ -146,23 +145,11 @@ public class PageRankWorker extends TaskWorker {
     ExecutionPlan plan = taskExecutor.plan(pageranktaskgraph);
     //Perform the iterations from 0 to 'n' number of iterations
     for (int i = 0; i < iterations; i++) {
-      taskExecutor.addInput(pageranktaskgraph, plan,
-          "pageranksource", "graphData", graphPartitionData);
 
-      taskExecutor.addInput(pageranktaskgraph, plan,
-          "pageranksource", "graphInitialPagerankValue", graphInitialPagerankValue);
-
-      taskExecutor.itrExecute(pageranktaskgraph, plan);
-
-
-      graphInitialPagerankValue = taskExecutor.getOutput(pageranktaskgraph, plan,
-          "pageranksink");
+      taskExecutor.itrExecute(pageranktaskgraph, plan, i == iterations - 1);
 
     }
-    taskExecutor.waitFor(pageranktaskgraph, plan);
     long endTime = System.currentTimeMillis();
-
-
 
 
     if (workerId == 0) {
@@ -217,7 +204,6 @@ public class PageRankWorker extends TaskWorker {
     }
 
 
-
   }
 
   public static ComputeGraph buildDataPointsTG(String dataDirectory, int dsize,
@@ -254,9 +240,9 @@ public class PageRankWorker extends TaskWorker {
     return datapointsTaskGraphBuilder.build();
   }
 
-  public  static ComputeGraph buildGraphInitialValueTG(String dataDirectory, int dsize,
-                                                       int parallelismValue,
-                                                       Config conf) {
+  public static ComputeGraph buildGraphInitialValueTG(String dataDirectory, int dsize,
+                                                      int parallelismValue,
+                                                      Config conf) {
     DataObjectSource pageRankValueHolder = new DataObjectSource(Context.TWISTER2_DIRECT_EDGE,
         dataDirectory);
     PageRankValueHolderCompute pageRankValueHolderCompute = new PageRankValueHolderCompute(
@@ -327,28 +313,23 @@ public class PageRankWorker extends TaskWorker {
   private static class PageRankSource extends BaseSource implements Receptor {
     private HashMap<String, ArrayList<String>> graphData;
     private HashMap<String, Double> graphPageRankValue;
-    private DataObject<?> graphObject = null;
-    private DataObject<?> graphObjectvalues = null;
+    private DataPartition<?> graphObject = null;
+    private DataPartition<?> graphObjectvalues = null;
 
     private int count = 0;
     private double danglingValueLocal;
 
 
-
-
     @Override
     public void execute() {
-      DataPartition<?> dataPartition = graphObject.getPartition(context.taskIndex());
-      graphData = (HashMap<String, ArrayList<String>>) dataPartition.getConsumer().next();
+      graphData = (HashMap<String, ArrayList<String>>) graphObject.first();
 
-      DataPartition<?> centroidPartition = graphObjectvalues.getPartition(context.taskIndex());
-      graphPageRankValue = (HashMap<String, Double>) centroidPartition.getConsumer().next();
+      graphPageRankValue = (HashMap<String, Double>) graphObjectvalues.first();
 
       if (count < graphData.size()) {
         for (int i = 0; i < graphData.size(); i++) {
           Object key = graphData.keySet().toArray()[i];
           if (!key.equals("")) {
-
 
 
             Double value = graphPageRankValue.get(key);
@@ -414,22 +395,24 @@ public class PageRankWorker extends TaskWorker {
       }
 
 
-
-
-
     }
 
     @Override
-    public void add(String name, DataObject<?> data) {
-      if ("graphData".equals(name)) {
+    public void add(String name, DataPartition<?> data) {
+      if (DataObjectSink.IO_GRAPH_DATA.equals(name)) {
         this.graphObject = data;
       }
-      if ("graphInitialPagerankValue".equals(name)) {
+      if (PageRankValueHolderSink.IO_PAGE_RANK_VALUE.equals(name)) {
         this.graphObjectvalues = data;
       }
     }
-  }
 
+    @Override
+    public IONames getReceivableNames() {
+      return IONames.declare(DataObjectSink.IO_GRAPH_DATA,
+          PageRankValueHolderSink.IO_PAGE_RANK_VALUE);
+    }
+  }
 
 
   private static class PageRankKeyedReduce extends BaseCompute {
@@ -451,7 +434,7 @@ public class PageRankWorker extends TaskWorker {
 
             if (!kc.getKey().equals("danglingvalues")) {
               double value = ((double[]) kc.getValue())[0];
-              double pagerankValue  = (0.15 / graphsize) + (0.85 * value);
+              double pagerankValue = (0.15 / graphsize) + (0.85 * value);
 
               output.put((String) kc.getKey(), pagerankValue);
 
@@ -490,8 +473,13 @@ public class PageRankWorker extends TaskWorker {
     }
 
     @Override
-    public DataPartition<HashMap<String, Double>> get() {
-      return new EntityPartition<>(context.taskIndex(), finalout);
+    public DataPartition<HashMap<String, Double>> get(String name) {
+      return new EntityPartition<>(finalout);
+    }
+
+    @Override
+    public IONames getCollectibleNames() {
+      return IONames.declare(DataObjectSink.IO_GRAPH_DATA);
     }
 
     @Override
@@ -518,7 +506,6 @@ public class PageRankWorker extends TaskWorker {
 
     }
   }
-
 
 
 }

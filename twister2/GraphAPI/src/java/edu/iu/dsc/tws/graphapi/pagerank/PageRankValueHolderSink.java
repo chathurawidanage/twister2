@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.TaskContext;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.config.Config;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
@@ -28,7 +29,7 @@ import edu.iu.dsc.tws.dataset.partition.EntityPartition;
 
 public class PageRankValueHolderSink extends BaseSink implements Collector {
 
-  private static final Logger LOG = Logger.getLogger(PageRankValueHolderSink.class.getName());
+  public static String IO_PAGE_RANK_VALUE = "page-rank-value";
 
   private static final long serialVersionUID = -1L;
 
@@ -60,7 +61,12 @@ public class PageRankValueHolderSink extends BaseSink implements Collector {
   }
 
   @Override
-  public DataPartition<HashMap<String, Double>> get() {
-    return new EntityPartition<>(context.taskIndex(), dataPointsLocal);
+  public DataPartition<HashMap<String, Double>> get(String name) {
+    return new EntityPartition<>(dataPointsLocal);
+  }
+
+  @Override
+  public IONames getCollectibleNames() {
+    return IONames.declare(IO_PAGE_RANK_VALUE);
   }
 }
