@@ -16,9 +16,9 @@ import edu.iu.dsc.tws.api.dataset.DataPartition;
 /**
  * Add input to a task graph
  */
-public interface Receptor {
+public interface Receptor<T> {
 
-  void add(String name, DataPartition<?> data);
+  void add(String name, DataPartition<T> data);
 
   /**
    * This method should return a set of receivable names, that are expected by this receptor.

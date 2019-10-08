@@ -21,6 +21,7 @@ import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.TaskContext;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.BaseCompute;
 import edu.iu.dsc.tws.api.config.Config;
@@ -50,7 +51,7 @@ public class IterativeStreamingCompute extends BaseCompute<double[]>
 
   private int evaluationInterval = 10;
 
-  private DataObject<double[][]> dataPointsObject = null;
+  private DataPartition<double[][]> dataPointsObject = null;
 
   private double[][] datapoints = null;
 
@@ -83,21 +84,29 @@ public class IterativeStreamingCompute extends BaseCompute<double[]>
   }
 
   @Override
-  public DataPartition<double[]> get() {
-    return new EntityPartition<>(context.taskIndex(), newWeightVector);
+  public DataPartition<double[]> get(String name) {
+    return new EntityPartition<>(newWeightVector);
   }
 
   @Override
-  public void add(String name, DataObject<?> data) {
+  public void add(String name, DataPartition data) {
     if (Constants.SimpleGraphConfig.TEST_DATA.equals(name)) {
-      this.dataPointsObject = (DataObject<double[][]>) data;
+      this.dataPointsObject = (DataPartition<double[][]>) data;
     }
   }
 
+  @Override
+  public IONames getCollectibleNames() {
+    return IONames.declare(Constants.SimpleGraphConfig.IO_ITR_STREAM);
+  }
+
+  @Override
+  public IONames getReceivableNames() {
+    return IONames.declare(Constants.SimpleGraphConfig.TEST_DATA);
+  }
+
   private void prepareDataPoints() {
-    DataPartition<double[][]> dataPartition = this.dataPointsObject
-        .getPartition(context.taskIndex());
-    this.datapoints = dataPartition.getConsumer().next();
+    this.datapoints = this.dataPointsObject.first();
     if (debug) {
       LOG.info(String.format("Recieved Input Data : %s ", this.datapoints.getClass().getName()));
     }

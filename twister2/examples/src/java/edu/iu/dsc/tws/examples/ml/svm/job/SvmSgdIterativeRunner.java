@@ -48,6 +48,8 @@ import edu.iu.dsc.tws.task.impl.ComputeConnection;
 import edu.iu.dsc.tws.task.impl.ComputeGraphBuilder;
 import edu.iu.dsc.tws.task.impl.TaskWorker;
 
+import static edu.iu.dsc.tws.examples.ml.svm.constant.Constants.SimpleGraphConfig.IO_ACCURACY;
+
 public class SvmSgdIterativeRunner extends TaskWorker {
 
   private static final Logger LOG = Logger.getLogger(SvmSgdIterativeRunner.class.getName());
@@ -410,17 +412,14 @@ public class SvmSgdIterativeRunner extends TaskWorker {
     iterativeSVMTestingTaskGraph = buildSvmSgdTestingTG();
     iterativeSVMTestingExecutionPlan = taskExecutor.plan(iterativeSVMTestingTaskGraph);
 
-    taskExecutor.addInput(iterativeSVMTestingTaskGraph, iterativeSVMTestingExecutionPlan,
-        Constants.SimpleGraphConfig.PREDICTION_SOURCE_TASK,
-        Constants.SimpleGraphConfig.TEST_DATA, testingDoubleDataPointObject);
-    taskExecutor.addInput(iterativeSVMTestingTaskGraph, iterativeSVMTestingExecutionPlan,
-        Constants.SimpleGraphConfig.PREDICTION_SOURCE_TASK,
-        Constants.SimpleGraphConfig.INPUT_WEIGHT_VECTOR, inputDoubleWeightvectorObject);
+    //todo remove addInput
+    taskExecutor.addInput(Constants.SimpleGraphConfig.TEST_DATA, testingDoubleDataPointObject);
+    taskExecutor.addInput(Constants.SimpleGraphConfig.INPUT_WEIGHT_VECTOR,
+        inputDoubleWeightvectorObject);
+
     taskExecutor.execute(iterativeSVMTestingTaskGraph, iterativeSVMTestingExecutionPlan);
-    finalAccuracyDoubleObject = taskExecutor.getOutput(iterativeSVMTestingTaskGraph,
-        iterativeSVMTestingExecutionPlan,
-        Constants.SimpleGraphConfig.PREDICTION_REDUCE_TASK);
-    accuracy = finalAccuracyDoubleObject.getPartitions()[0].getConsumer().next();
+    finalAccuracyDoubleObject = taskExecutor.getOutput(IO_ACCURACY);
+    accuracy = finalAccuracyDoubleObject.getLowestPartition().first();
     LOG.info(String.format("Final Accuracy : %f ", accuracy));
   }
 

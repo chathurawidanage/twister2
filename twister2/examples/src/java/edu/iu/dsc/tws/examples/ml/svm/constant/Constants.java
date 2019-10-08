@@ -89,6 +89,18 @@ public final class Constants {
 
     public static final String COMMS_RUNNER = "comms";
 
+    public static final String IO_ACCURACY = "svm-accuracy";
 
+    public static final String IO_DATA = "svm-data";
+
+    public static final String IO_PRIMARY_DATA = "svm-primary-data";
+
+    public static final String IO_DATA_REDUCE = "svm-data-reduce";
+
+    public static final String IO_WEIGHT_VECTOR = "svm-weight-vector";
+
+    public static final String IO_WEIGHT_VECTOR_REDUCE = "svm-weight-vector-reduce";
+
+    public static final String IO_ITR_STREAM = "svm-itr-stream";
   }
 }

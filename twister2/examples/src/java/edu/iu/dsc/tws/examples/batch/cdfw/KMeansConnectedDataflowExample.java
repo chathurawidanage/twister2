@@ -36,7 +36,6 @@ import edu.iu.dsc.tws.api.compute.nodes.BaseSource;
 import edu.iu.dsc.tws.api.config.Config;
 import edu.iu.dsc.tws.api.config.Context;
 import edu.iu.dsc.tws.api.data.Path;
-import edu.iu.dsc.tws.api.dataset.DataObject;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.api.exceptions.Twister2RuntimeException;
 import edu.iu.dsc.tws.api.scheduler.SchedulerContext;
@@ -288,15 +287,15 @@ public final class KMeansConnectedDataflowExample {
     }
   }
 
-  public static class KMeansSourceTask extends BaseSource implements Receptor {
+  public static class KMeansSourceTask extends BaseSource implements Receptor<double[][]> {
     private static final long serialVersionUID = -254264120110286748L;
 
     private double[][] centroid = null;
     private double[][] datapoints = null;
 
     private KMeansCalculator kMeansCalculator = null;
-    private DataObject<?> dataPointsObject = null;
-    private DataObject<?> centroidsObject = null;
+    private DataPartition<double[][]> dataPointsObject = null;
+    private DataPartition<double[][]> centroidsObject = null;
 
     private int dimension = 0;
 
@@ -309,11 +308,8 @@ public final class KMeansConnectedDataflowExample {
 
     @Override
     public void execute() {
-      DataPartition<?> dataPartition = dataPointsObject.getPartition(context.taskIndex());
-      datapoints = (double[][]) dataPartition.getConsumer().next();
-
-      DataPartition<?> centroidPartition = centroidsObject.getPartition(context.taskIndex());
-      centroid = (double[][]) centroidPartition.getConsumer().next();
+      datapoints = dataPointsObject.first();
+      centroid = centroidsObject.first();
 
       kMeansCalculator = new KMeansCalculator(datapoints, centroid, dimension);
       double[][] kMeansCenters = kMeansCalculator.calculate();
@@ -322,7 +318,7 @@ public final class KMeansConnectedDataflowExample {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void add(String name, DataObject<?> data) {
+    public void add(String name, DataPartition<double[][]> data) {
       //LOG.info("Received input: " + name);
       if ("points".equals(name)) {
         this.dataPointsObject = data;
@@ -366,8 +362,8 @@ public final class KMeansConnectedDataflowExample {
     }
 
     @Override
-    public DataPartition<double[][]> get() {
-      return new EntityPartition<>(context.taskIndex(), newCentroids);
+    public DataPartition<double[][]> get(String name) {
+      return new EntityPartition<>(newCentroids);
     }
 
     @Override

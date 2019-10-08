@@ -28,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSource;
 import edu.iu.dsc.tws.api.dataset.DataObject;
@@ -40,7 +41,8 @@ import edu.iu.dsc.tws.examples.ml.svm.sgd.pegasos.PegasosSgdSvm;
 import edu.iu.dsc.tws.examples.ml.svm.util.BinaryBatchModel;
 import edu.iu.dsc.tws.examples.ml.svm.util.DataUtils;
 
-public class IterativeDataStream extends BaseSource implements Receptor<double[][]> {
+public class IterativeDataStream extends BaseSource implements Receptor {
+
   private static final Logger LOG = Logger.getLogger(IterativeDataStream.class.getName());
   private static final long serialVersionUID = 6672551932831677547L;
 
@@ -52,9 +54,9 @@ public class IterativeDataStream extends BaseSource implements Receptor<double[]
 
   private BinaryBatchModel binaryBatchModel;
 
-  private DataObject<double[][]> dataPointsObject = null;
+  private DataPartition<double[][]> dataPointsObject = null;
 
-  private DataObject<double[]> weightVectorObject = null;
+  private DataPartition<double[]> weightVectorObject = null;
 
   private double[][] datapoints = null;
 
@@ -85,18 +87,23 @@ public class IterativeDataStream extends BaseSource implements Receptor<double[]
 
 
   @Override
-  public void add(String name, DataObject<?> data) {
+  public void add(String name, DataPartition data) {
     if (debug) {
       LOG.log(Level.INFO, String.format("Received input: %s ", name));
     }
 
     if (Constants.SimpleGraphConfig.INPUT_DATA.equals(name)) {
-      this.dataPointsObject = (DataObject<double[][]>) data;
+      this.dataPointsObject = (DataPartition<double[][]>) data;
     }
 
     if (Constants.SimpleGraphConfig.INPUT_WEIGHT_VECTOR.equals(name)) {
-      this.weightVectorObject = (DataObject<double[]>) data;
+      this.weightVectorObject = (DataPartition<double[]>) data;
     }
+  }
+
+  @Override
+  public IONames getReceivableNames() {
+    return null;
   }
 
   @Override
@@ -113,11 +120,8 @@ public class IterativeDataStream extends BaseSource implements Receptor<double[]
   }
 
   public void getData() {
-    DataPartition<double[][]> dataPartition = dataPointsObject.getPartition(context.taskIndex());
-    this.datapoints = dataPartition.getConsumer().next();
-    DataPartition<double[]> weightVectorPartition = weightVectorObject.getPartition(context
-        .taskIndex());
-    this.weightVector = weightVectorPartition.getConsumer().next();
+    this.datapoints = dataPointsObject.first();
+    this.weightVector = weightVectorObject.first();
 
     if (debug) {
       LOG.info(String.format("Recieved Input Data : %s ", this.datapoints.getClass().getName()));
@@ -224,5 +228,4 @@ public class IterativeDataStream extends BaseSource implements Receptor<double[]
     }
 
   }
-
 }

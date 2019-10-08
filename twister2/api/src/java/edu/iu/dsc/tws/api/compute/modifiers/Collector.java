@@ -17,7 +17,7 @@ import edu.iu.dsc.tws.api.dataset.DataPartition;
 /**
  * Special task for collecting the output from tasks
  */
-public interface Collector {
+public interface Collector<T> {
 
   /**
    * get the collected valued
@@ -25,7 +25,7 @@ public interface Collector {
    * @param name name of the value to collect
    * @return the partition of the data
    */
-  DataPartition<?> get(String name);
+  DataPartition<T> get(String name);
 
   /**
    * This method should return a set of collectible names, that can be collected from this

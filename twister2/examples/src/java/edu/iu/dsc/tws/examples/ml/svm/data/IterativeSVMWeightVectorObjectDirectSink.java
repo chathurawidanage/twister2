@@ -28,9 +28,11 @@ import java.util.logging.Logger;
 
 import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.ISink;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.dataset.partition.EntityPartition;
+import edu.iu.dsc.tws.examples.ml.svm.constant.Constants;
 import edu.iu.dsc.tws.task.typed.AbstractIterableDataCompute;
 
 
@@ -63,7 +65,12 @@ public class IterativeSVMWeightVectorObjectDirectSink
   }
 
   @Override
-  public DataPartition<double[]> get() {
-    return new EntityPartition<>(context.taskIndex(), this.dataPointsLocal);
+  public DataPartition<double[]> get(String name) {
+    return new EntityPartition<>(this.dataPointsLocal);
+  }
+
+  @Override
+  public IONames getCollectibleNames() {
+    return IONames.declare(Constants.SimpleGraphConfig.IO_WEIGHT_VECTOR);
   }
 }

@@ -22,7 +22,6 @@ import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.BaseCompute;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSource;
-import edu.iu.dsc.tws.api.dataset.DataObject;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
 
 public class TaskSchedulerClassTest {
@@ -37,7 +36,7 @@ public class TaskSchedulerClassTest {
     }
 
     @Override
-    public void add(String name, DataObject<?> data) {
+    public void add(String name, DataPartition data) {
     }
 
     @Override
@@ -70,11 +69,6 @@ public class TaskSchedulerClassTest {
     @Override
     public boolean execute(IMessage message) {
       return false;
-    }
-
-    @Override
-    public DataPartition<?> get() {
-      return null;
     }
 
     @Override

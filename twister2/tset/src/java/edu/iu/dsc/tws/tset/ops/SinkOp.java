@@ -15,6 +15,7 @@ import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.TaskContext;
 import edu.iu.dsc.tws.api.compute.modifiers.Closable;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.IComputableSink;
 import edu.iu.dsc.tws.api.config.Config;
@@ -24,6 +25,7 @@ import edu.iu.dsc.tws.api.tset.TSetContext;
 import edu.iu.dsc.tws.api.tset.fn.SinkFunc;
 
 public class SinkOp<T> implements IComputableSink<T>, Closable, Collector, Receptor {
+
   private static final long serialVersionUID = -9398832570L;
 
   private SinkFunc<T> sink;
@@ -56,12 +58,26 @@ public class SinkOp<T> implements IComputableSink<T>, Closable, Collector, Recep
   }
 
   @Override
-  public DataPartition<?> get() {
+  public DataPartition get(String name) {
+    //todo name?
     return sink.get();
   }
 
   @Override
-  public void add(String name, DataObject<?> data) {
-    tSetContext.addInput(name, data);
+  public IONames getCollectibleNames() {
+    //todo names
+    return null;
+  }
+
+  @Override
+  public IONames getReceivableNames() {
+    //todo names
+    return null;
+  }
+
+  @Override
+  public void add(String name, DataPartition data) {
+    // todo addInput
+    //tSetContext.addInput(name, data);
   }
 }

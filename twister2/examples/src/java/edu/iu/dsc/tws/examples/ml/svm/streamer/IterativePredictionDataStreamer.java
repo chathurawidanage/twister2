@@ -27,9 +27,9 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSource;
-import edu.iu.dsc.tws.api.dataset.DataObject;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.examples.ml.svm.constant.Constants;
 import edu.iu.dsc.tws.examples.ml.svm.exceptions.MatrixMultiplicationException;
@@ -38,7 +38,7 @@ import edu.iu.dsc.tws.examples.ml.svm.test.Predict;
 import edu.iu.dsc.tws.examples.ml.svm.util.BinaryBatchModel;
 import edu.iu.dsc.tws.examples.ml.svm.util.DataUtils;
 
-public class IterativePredictionDataStreamer extends BaseSource implements Receptor<Double> {
+public class IterativePredictionDataStreamer extends BaseSource implements Receptor {
   private static final long serialVersionUID = -5619263102396811849L;
 
   private static final Logger LOG = Logger.getLogger(IterativePredictionDataStreamer.class
@@ -52,9 +52,9 @@ public class IterativePredictionDataStreamer extends BaseSource implements Recep
 
   private BinaryBatchModel binaryBatchModel;
 
-  private DataObject<double[][]> dataPointsObject = null;
+  private DataPartition<double[][]> dataPointsObject = null;
 
-  private DataObject<double[]> weightVectorObject = null;
+  private DataPartition<double[]> weightVectorObject = null;
 
   private double[][] datapoints = null;
 
@@ -79,13 +79,19 @@ public class IterativePredictionDataStreamer extends BaseSource implements Recep
   }
 
   @Override
-  public void add(String name, DataObject<?> data) {
+  public void add(String name, DataPartition data) {
     if (Constants.SimpleGraphConfig.TEST_DATA.equals(name)) {
-      this.dataPointsObject = (DataObject<double[][]>) data;
+      this.dataPointsObject = (DataPartition<double[][]>) data;
     }
     if (Constants.SimpleGraphConfig.INPUT_WEIGHT_VECTOR.equals(name)) {
-      this.weightVectorObject = (DataObject<double[]>) data;
+      this.weightVectorObject = (DataPartition<double[]>) data;
     }
+  }
+
+  @Override
+  public IONames getReceivableNames() {
+    return IONames.declare(Constants.SimpleGraphConfig.TEST_DATA,
+        Constants.SimpleGraphConfig.INPUT_WEIGHT_VECTOR);
   }
 
   @Override
@@ -111,11 +117,8 @@ public class IterativePredictionDataStreamer extends BaseSource implements Recep
   }
 
   public void getData() {
-    DataPartition<double[][]> dataPartition = dataPointsObject.getPartition(context.taskIndex());
-    this.datapoints = dataPartition.getConsumer().next();
-    DataPartition<double[]> weightVectorPartition = weightVectorObject.getPartition(context
-        .taskIndex());
-    this.weightVector = weightVectorPartition.getConsumer().next();
+    this.datapoints = dataPointsObject.first();
+    this.weightVector = weightVectorObject.first();
 
     if (debug) {
       LOG.info(String.format("Recieved Input Data : %s ", this.datapoints.getClass().getName()));

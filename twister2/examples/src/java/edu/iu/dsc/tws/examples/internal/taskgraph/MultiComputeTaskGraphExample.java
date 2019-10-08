@@ -35,6 +35,7 @@ import edu.iu.dsc.tws.api.compute.executor.ExecutionPlan;
 import edu.iu.dsc.tws.api.compute.graph.ComputeGraph;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.BaseCompute;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSource;
@@ -152,7 +153,7 @@ public class MultiComputeTaskGraphExample extends TaskWorker {
     ExecutionPlan plan = taskExecutor.plan(graph);
     taskExecutor.execute(graph, plan);
 
-    DataObject<double[]> dataSet = taskExecutor.getOutput(graph, plan, "sink");
+    DataObject<double[]> dataSet = taskExecutor.getOutput("output");
     DataPartition<double[]> values = dataSet.getPartitions()[0];
     double[] newValue = values.getConsumer().next();
     LOG.info("Final Aggregated Values Are:" + Arrays.toString(newValue));
@@ -261,8 +262,13 @@ public class MultiComputeTaskGraphExample extends TaskWorker {
     }
 
     @Override
-    public DataPartition<double[]> get() {
-      return new EntityPartition<>(context.taskIndex(), newValues);
+    public DataPartition<double[]> get(String name) {
+      return new EntityPartition<>(newValues);
+    }
+
+    @Override
+    public IONames getCollectibleNames() {
+      return IONames.declare("output");
     }
   }
 

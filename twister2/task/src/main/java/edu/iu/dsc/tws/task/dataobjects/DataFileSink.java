@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.TaskContext;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.config.Config;
 import edu.iu.dsc.tws.api.data.FileSystem;
@@ -56,7 +57,12 @@ public class DataFileSink<T> extends BaseSink implements Collector {
   }
 
   @Override
-  public DataPartition<Object> get() {
-    return new EntityPartition<>(context.taskIndex(), datasink);
+  public DataPartition<Object> get(String name) {
+    return new EntityPartition<>(datasink);
+  }
+
+  @Override
+  public IONames getCollectibleNames() {
+    return IONames.declare("data");
   }
 }

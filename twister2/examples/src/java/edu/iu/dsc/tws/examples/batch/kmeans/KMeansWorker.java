@@ -28,7 +28,6 @@ import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSource;
 import edu.iu.dsc.tws.api.config.Config;
 import edu.iu.dsc.tws.api.config.Context;
-import edu.iu.dsc.tws.api.dataset.DataObject;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.api.resource.IPersistentVolume;
 import edu.iu.dsc.tws.api.resource.IVolatileVolume;
@@ -246,12 +245,7 @@ public class KMeansWorker implements IWorker {
     }
 
     @Override
-    public void add(String name, DataObject<?> data) {
-
-    }
-
-    @Override
-    public void add(String name, DataPartition<?> data) {
+    public void add(String name, DataPartition data) {
       if ("points".equals(name)) {
         this.dataPartition = data;
       }
@@ -291,7 +285,7 @@ public class KMeansWorker implements IWorker {
     }
 
     @Override
-    public DataPartition<double[][]> get() {
+    public DataPartition<double[][]> get(String name) {
       return new EntityPartition<>(newCentroids);
     }
 

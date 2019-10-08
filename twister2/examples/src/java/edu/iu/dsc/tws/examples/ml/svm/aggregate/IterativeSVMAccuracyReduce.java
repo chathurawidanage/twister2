@@ -28,11 +28,15 @@ import java.util.logging.Logger;
 import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.dataset.partition.EntityPartition;
 
+import static edu.iu.dsc.tws.examples.ml.svm.constant.Constants.SimpleGraphConfig.IO_ACCURACY;
+
 public class IterativeSVMAccuracyReduce extends BaseSink<Double> implements Collector<Double> {
+
   private static final long serialVersionUID = 4268361215513644139L;
 
   private static final Logger LOG = Logger.getLogger(IterativeSVMAccuracyReduce.class.getName());
@@ -50,8 +54,13 @@ public class IterativeSVMAccuracyReduce extends BaseSink<Double> implements Coll
   }
 
   @Override
-  public DataPartition<Double> get() {
-    return new EntityPartition<>(context.taskIndex(), newAccuracy);
+  public DataPartition<Double> get(String name) {
+    return new EntityPartition<>(newAccuracy);
+  }
+
+  @Override
+  public IONames getCollectibleNames() {
+    return IONames.declare(IO_ACCURACY);
   }
 
   @Override

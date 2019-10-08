@@ -309,7 +309,7 @@ public class TaskExecutor {
       INodeInstance node = e.getValue();
       INode task = node.getNode();
       if (task instanceof Receptor && task instanceof ISource) {
-        ((Receptor) task).add(inputKey, input);
+        ((Receptor) task).add(inputKey, input.getPartition(node.getIndex()));
       }
     }
   }
@@ -371,6 +371,10 @@ public class TaskExecutor {
     return this.dataObjectMap.get(varName);
   }
 
+  public <T> void addInput(String varName, DataObject<T> dataObject) {
+    this.dataObjectMap.put(varName, dataObject);
+  }
+
   /**
    * This method collects all the output from the provided {@link ExecutionPlan}.
    * The partition IDs will be assigned just before adding the partitions to the {@link DataObject}
@@ -385,12 +389,6 @@ public class TaskExecutor {
           Set<String> collectibleNames = ((Collector) task).getCollectibleNames();
           collectibleNames.forEach(name -> {
             DataPartition partition = ((Collector) task).get(name);
-
-            // if this task outs only one partition and user has implemented no arg get() method
-            if (collectibleNames.size() == 1 && partition == null) {
-              partition = ((Collector) task).get();
-            }
-
             if (partition != null) {
               partition.setId(node.getIndex());
               dataObjectMapForPlan.computeIfAbsent(name,
@@ -428,7 +426,6 @@ public class TaskExecutor {
               throw new Twister2RuntimeException("Couldn't find input data" + receivableName
                   + " for task index " + node.getIndex() + " of task" + node.getId());
             }
-            ((Receptor) task).add(receivableName, dataObject);
             ((Receptor) task).add(receivableName, partition);
           }
         }

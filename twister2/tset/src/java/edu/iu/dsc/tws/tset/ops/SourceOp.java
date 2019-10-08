@@ -12,10 +12,11 @@
 package edu.iu.dsc.tws.tset.ops;
 
 import edu.iu.dsc.tws.api.compute.TaskContext;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.ISource;
 import edu.iu.dsc.tws.api.config.Config;
-import edu.iu.dsc.tws.api.dataset.DataObject;
+import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.api.tset.TSetContext;
 import edu.iu.dsc.tws.api.tset.fn.SourceFunc;
 
@@ -30,6 +31,7 @@ public class SourceOp<T> implements ISource, Receptor {
 
   public SourceOp() {
   }
+
   public SourceOp(SourceFunc<T> src) {
     this.source = src;
   }
@@ -53,7 +55,14 @@ public class SourceOp<T> implements ISource, Receptor {
   }
 
   @Override
-  public void add(String name, DataObject<?> data) {
-    this.tSetContext.addInput(name, data);
+  public IONames getReceivableNames() {
+    //todo names
+    return null;
+  }
+
+  @Override
+  public void add(String name, DataPartition data) {
+    //todo addInput
+    //this.tSetContext.addInput(name, data);
   }
 }

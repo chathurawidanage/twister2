@@ -20,11 +20,12 @@ import java.util.logging.Logger;
 
 import edu.iu.dsc.tws.api.compute.TaskContext;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.modifiers.Receptor;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSource;
 import edu.iu.dsc.tws.api.config.Config;
 import edu.iu.dsc.tws.api.dataset.DataObject;
-import edu.iu.dsc.tws.dataset.partition.EntityPartition;
+import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.examples.ml.svm.constant.Constants;
 import edu.iu.dsc.tws.examples.ml.svm.exceptions.InputDataFormatException;
 import edu.iu.dsc.tws.examples.ml.svm.util.BinaryBatchModel;
@@ -40,9 +41,9 @@ public class InputDataStreamer extends BaseSource implements Receptor {
 
   private BinaryBatchModel binaryBatchModel;
 
-  private DataObject<?> dataPointsObject = null;
+  private DataPartition dataPointsObject = null;
 
-  private DataObject<?> weightVectorObject = null;
+  private DataPartition weightVectorObject = null;
 
   private Object datapoints = null;
 
@@ -134,7 +135,7 @@ public class InputDataStreamer extends BaseSource implements Receptor {
   }
 
   @Override
-  public void add(String name, DataObject<?> data) {
+  public void add(String name, DataPartition data) {
     if (debug) {
       LOG.log(Level.INFO, String.format("Received input: %s ", name));
     }
@@ -148,13 +149,18 @@ public class InputDataStreamer extends BaseSource implements Receptor {
     }
   }
 
-  public Object getDataPointsByTaskIndex(int taskIndex) {
-    EntityPartition<Object> datapointsEntityPartition
-        = (EntityPartition<Object>) dataPointsObject.getPartition(taskIndex);
+  @Override
+  public IONames getReceivableNames() {
+    return IONames.declare(Constants.SimpleGraphConfig.INPUT_DATA,
+        Constants.SimpleGraphConfig.INPUT_WEIGHT_VECTOR);
+  }
 
-    if (datapointsEntityPartition != null) {
+  public Object getDataPointsByTaskIndex(int taskIndex) {
+    //todo data objct out from data partition??
+
+    if (dataPointsObject != null) {
       DataObject<?> dataObject
-          = (DataObject<?>) datapointsEntityPartition.getConsumer().next();
+          = (DataObject<?>) dataPointsObject.first();
       datapoints = getDataPointsByDataObject(taskIndex, dataObject);
     }
 
@@ -162,12 +168,10 @@ public class InputDataStreamer extends BaseSource implements Receptor {
   }
 
   public Object getWeightVectorByTaskIndex(int taskIndex) {
-    EntityPartition<Object> weightVectorEntityPartition
-        = (EntityPartition<Object>) weightVectorObject.getPartition(taskIndex);
 
-    if (weightVectorEntityPartition != null) {
+    if (weightVectorObject != null) {
       DataObject<?> weightVectorObjectLocal
-          = (DataObject<?>) weightVectorEntityPartition.getConsumer().next();
+          = (DataObject<?>) weightVectorObject.first();
       weightVector = getDataPointsByDataObject(taskIndex, weightVectorObjectLocal);
     }
     return weightVector;

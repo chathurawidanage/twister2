@@ -306,7 +306,7 @@ public class SingleSourceShortestPathWorker extends TaskWorker {
     }
 
     @Override
-    public void add(String name, DataPartition<?> data) {
+    public void add(String name, DataPartition data) {
       if (GraphDataSink.IO_GRAPH_DATA.equals(name)) {
         this.graphObject = data;
       }

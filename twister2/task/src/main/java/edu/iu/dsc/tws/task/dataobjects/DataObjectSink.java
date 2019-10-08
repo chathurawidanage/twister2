@@ -11,11 +11,10 @@
 //  limitations under the License.
 package edu.iu.dsc.tws.task.dataobjects;
 
-import java.util.logging.Logger;
-
 import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.TaskContext;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.config.Config;
 import edu.iu.dsc.tws.api.dataset.DataObject;
@@ -29,7 +28,7 @@ import edu.iu.dsc.tws.dataset.partition.EntityPartition;
  */
 public class DataObjectSink<T> extends BaseSink implements Collector {
 
-  private static final Logger LOG = Logger.getLogger(DataObjectSink.class.getName());
+  public static final String IO_DATA_POINTS = "datapoints";
 
   private static final long serialVersionUID = -1L;
 
@@ -37,12 +36,10 @@ public class DataObjectSink<T> extends BaseSink implements Collector {
 
   /**
    * This method add the received message from the DataObject Source into the data objects.
-   * @param message
-   * @return
    */
   @Override
   public boolean execute(IMessage message) {
-    datapoints.addPartition(new EntityPartition<>(context.taskIndex(), message.getContent()));
+    datapoints.addPartition(new EntityPartition<>(message.getContent()));
     return true;
   }
 
@@ -53,7 +50,12 @@ public class DataObjectSink<T> extends BaseSink implements Collector {
   }
 
   @Override
-  public DataPartition<Object> get() {
-    return new EntityPartition<>(context.taskIndex(), datapoints);
+  public DataPartition<Object> get(String name) {
+    return new EntityPartition<>(datapoints);
+  }
+
+  @Override
+  public IONames getCollectibleNames() {
+    return IONames.declare(IO_DATA_POINTS);
   }
 }

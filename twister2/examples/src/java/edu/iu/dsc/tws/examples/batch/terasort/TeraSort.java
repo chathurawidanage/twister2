@@ -47,6 +47,7 @@ import edu.iu.dsc.tws.api.compute.executor.ExecutionPlan;
 import edu.iu.dsc.tws.api.compute.graph.ComputeGraph;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSource;
 import edu.iu.dsc.tws.api.compute.nodes.ISink;
 import edu.iu.dsc.tws.api.compute.schedule.elements.TaskInstancePlan;
@@ -70,6 +71,7 @@ import edu.iu.dsc.tws.task.impl.ComputeGraphBuilder;
 import edu.iu.dsc.tws.task.impl.ops.KeyedGatherConfig;
 import edu.iu.dsc.tws.task.typed.AllReduceCompute;
 import edu.iu.dsc.tws.task.typed.batch.BKeyedGatherUnGroupedCompute;
+
 import static edu.iu.dsc.tws.api.comms.CommunicationContext.SHUFFLE_MAX_BYTES_IN_MEMORY;
 import static edu.iu.dsc.tws.api.comms.CommunicationContext.SHUFFLE_MAX_FILE_SIZE;
 import static edu.iu.dsc.tws.examples.utils.bench.BenchmarkMetadata.ARG_BENCHMARK_METADATA;
@@ -164,11 +166,10 @@ public class TeraSort implements IWorker {
       ComputeGraph sampleGraphBuild = samplingGraph.build();
       ExecutionPlan sampleTaskPlan = cEnv.getTaskExecutor().plan(sampleGraphBuild);
       cEnv.getTaskExecutor().execute(sampleGraphBuild, sampleTaskPlan);
-      DataObject<byte[]> output = cEnv.getTaskExecutor().getOutput(sampleGraphBuild,
-          sampleTaskPlan, TASK_SAMPLER_REDUCE);
+      DataObject<byte[]> output = cEnv.getTaskExecutor().getOutput("minmax");
       LOG.info("Sample output received");
       taskPartitioner = new TaskPartitionerForSampledData(
-          output.getPartitions()[0].getConsumer().next(),
+          output.getLowestPartition().first(),
           keySize
       );
     } else {
@@ -248,13 +249,18 @@ public class TeraSort implements IWorker {
 
 
     @Override
-    public DataPartition<?> get() {
+    public DataPartition<byte[]> get(String name) {
       return minMax;
     }
 
     @Override
+    public IONames getCollectibleNames() {
+      return IONames.declare("minmax");
+    }
+
+    @Override
     public boolean allReduce(byte[] content) {
-      this.minMax = new EntityPartition<>(0, content);
+      this.minMax = new EntityPartition<>(content);
       return true;
     }
   }

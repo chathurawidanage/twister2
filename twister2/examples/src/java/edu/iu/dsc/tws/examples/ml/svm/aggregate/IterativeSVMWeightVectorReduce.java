@@ -28,9 +28,11 @@ import java.util.logging.Logger;
 import edu.iu.dsc.tws.api.compute.IMessage;
 import edu.iu.dsc.tws.api.compute.graph.OperationMode;
 import edu.iu.dsc.tws.api.compute.modifiers.Collector;
+import edu.iu.dsc.tws.api.compute.modifiers.IONames;
 import edu.iu.dsc.tws.api.compute.nodes.BaseSink;
 import edu.iu.dsc.tws.api.dataset.DataPartition;
 import edu.iu.dsc.tws.dataset.partition.EntityPartition;
+import edu.iu.dsc.tws.examples.ml.svm.constant.Constants;
 
 public class IterativeSVMWeightVectorReduce
     extends BaseSink<double[]> implements Collector<double[]> {
@@ -62,7 +64,12 @@ public class IterativeSVMWeightVectorReduce
   }
 
   @Override
-  public DataPartition<double[]> get() {
-    return new EntityPartition<>(context.taskIndex(), newWeightVector);
+  public DataPartition<double[]> get(String name) {
+    return new EntityPartition<>(newWeightVector);
+  }
+
+  @Override
+  public IONames getCollectibleNames() {
+    return IONames.declare(Constants.SimpleGraphConfig.IO_WEIGHT_VECTOR_REDUCE);
   }
 }
