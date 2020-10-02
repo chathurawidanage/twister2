@@ -13,6 +13,8 @@ You can download source code from [Github](https://github.com/DSC-SPIDAL/twister
 
 1. Fault Tolerance enhancements
 2. Apache Beam integration is now official [Beam Docs](https://beam.apache.org/documentation/runners/twister2/)
+3. Improvements to configurations
+4. Major TSet API update
  
 ## Minor features
 
