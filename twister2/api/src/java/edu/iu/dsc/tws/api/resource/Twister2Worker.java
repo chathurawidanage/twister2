@@ -11,7 +11,9 @@
 //  limitations under the License.
 package edu.iu.dsc.tws.api.resource;
 
-public interface Twister2Worker {
+import java.io.Serializable;
+
+public interface Twister2Worker extends Serializable{
 
   /**
    * This is the main point of entry for Twister2 jobs.
