@@ -130,9 +130,17 @@ http_archive(
     name = "ucx",
     build_file = "@//:third_party/ucx/ucx.BUILD",
     #sha256 = "b56f6030d7076a2e468dde95e53f5bb7a48aac500e4a0e59b37ee9f1b174e665",
-    strip_prefix = "ucx-bf5e7fd72a93a7a07aa3dc5c6c793f6ca4d6e740",
-    urls = ["https://github.com/openucx/ucx/archive/bf5e7fd72a93a7a07aa3dc5c6c793f6ca4d6e740.zip"],
+    strip_prefix = "ucx-8c748b4bea1e4565f7a238147b481907da754eed",
+    urls = ["https://github.com/openucx/ucx/archive/8c748b4bea1e4565f7a238147b481907da754eed.zip"],
 )
+
+#http_archive(
+#    name = "ucx",
+#    build_file = "@//:third_party/ucx/ucx.BUILD",
+#    #sha256 = "b56f6030d7076a2e468dde95e53f5bb7a48aac500e4a0e59b37ee9f1b174e665",
+#    strip_prefix = "ucx-bf5e7fd72a93a7a07aa3dc5c6c793f6ca4d6e740",
+#    urls = ["https://github.com/openucx/ucx/archive/bf5e7fd72a93a7a07aa3dc5c6c793f6ca4d6e740.zip"],
+#)
 
 # http_archive(
 #     name = "cylon",
